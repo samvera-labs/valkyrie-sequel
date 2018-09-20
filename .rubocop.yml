@@ -1,0 +1,13 @@
+inherit_gem:
+  bixby: bixby_default.yml
+AllCops:
+  DisplayCopNames: true
+  TargetRubyVersion: 2.3
+  Exclude:
+    - 'bin/*'
+    - 'db/schema.rb'
+    - 'vendor/**/*'
+Naming/FileName:
+  Exclude:
+    - 'valkyrie-sequel.gemspec'
+    - 'Gemfile'
