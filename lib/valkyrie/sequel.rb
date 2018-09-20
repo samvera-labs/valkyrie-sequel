@@ -7,6 +7,7 @@ require 'sequel_pg'
 
 module Valkyrie
   module Sequel
-    # Your code goes here...
+    ::Sequel.extension(:pg_json_ops)
+    require 'valkyrie/sequel/metadata_adapter'
   end
 end
