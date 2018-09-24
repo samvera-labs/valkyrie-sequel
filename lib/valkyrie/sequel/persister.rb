@@ -36,6 +36,7 @@ module Valkyrie::Sequel
 
       def create_or_update(resource:, attributes:)
         attributes[:updated_at] = Sequel.function(:NOW)
+        attributes[:created_at] = Sequel.function(:NOW)
         return resources.insert(attributes) unless resource.persisted?
         relation = resources.where(id: attributes[:id])
         if resource.optimistic_locking_enabled?
