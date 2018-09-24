@@ -11,3 +11,9 @@ Naming/FileName:
   Exclude:
     - 'valkyrie-sequel.gemspec'
     - 'Gemfile'
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'
+Metrics/ClassLength:
+  Exclude:
+    - 'lib/valkyrie/sequel/query_service.rb'

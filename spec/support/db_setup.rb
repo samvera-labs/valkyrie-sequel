@@ -7,4 +7,5 @@ DB_CONNECTION_INFO = {
   database: 'valkyrie_sequel_test'
 }.freeze
 
-Valkyrie::Sequel::MetadataAdapter.new(DB_CONNECTION_INFO).reset_database!
+METADATA_ADAPTER = Valkyrie::Sequel::MetadataAdapter.new(DB_CONNECTION_INFO)
+METADATA_ADAPTER.reset_database!

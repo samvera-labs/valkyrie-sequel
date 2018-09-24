@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 module Valkyrie::Sequel
+  require 'valkyrie/sequel/resource_factory'
+  require 'valkyrie/sequel/query_service'
+  require 'valkyrie/sequel/persister'
   class MetadataAdapter
     attr_reader :user, :password, :host, :port, :database
     def initialize(user:, password:, host:, port:, database:)
@@ -10,11 +13,24 @@ module Valkyrie::Sequel
       @database = database
     end
 
-    def persister; end
+    def persister
+      @persister ||= Persister.new(adapter: self)
+    end
 
-    def query_service; end
+    def query_service
+      @query_service ||= QueryService.new(adapter: self)
+    end
 
-    def id; end
+    def resource_factory
+      @resource_factory ||= ResourceFactory.new(adapter: self)
+    end
+
+    def id
+      @id ||= begin
+        to_hash = "sequel://#{host}:#{port}:#{database}"
+        Valkyrie::ID.new(Digest::MD5.hexdigest(to_hash))
+      end
+    end
 
     def perform_migrations!(drop: false)
       Sequel.extension :migration
@@ -41,6 +57,10 @@ module Valkyrie::Sequel
       @connection ||= Sequel.connect(adapter: :postgres, user: user, password: password, host: host, port: port, database: database).tap do |connection|
         connection.extension(:pg_json)
       end
+    end
+
+    def resources
+      connection.from(:orm_resources)
     end
 
     private

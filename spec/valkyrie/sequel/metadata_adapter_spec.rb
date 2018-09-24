@@ -3,7 +3,7 @@ require 'spec_helper'
 require 'valkyrie/specs/shared_specs'
 
 RSpec.describe Valkyrie::Sequel::MetadataAdapter do
-  let(:adapter) { described_class.new(DB_CONNECTION_INFO) }
+  let(:adapter) { METADATA_ADAPTER }
   it_behaves_like "a Valkyrie::MetadataAdapter"
 
   describe "#connection" do
