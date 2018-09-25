@@ -37,7 +37,7 @@ module Valkyrie::Sequel
       Sequel.extension :migration
       drop_database! if drop
       create_database!
-      Sequel::Migrator.run(connection, "db/migrations")
+      Sequel::Migrator.run(connection, "#{__dir__}/../../../db/migrations")
     end
 
     def reset_database!
