@@ -1,8 +1,23 @@
 # frozen_string_literal: true
+ENV['RACK_ENV'] = 'test'
+ENV['RAILS_ENV'] = 'test'
+require 'simplecov'
+require 'coveralls'
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new(
+  [
+    SimpleCov::Formatter::HTMLFormatter,
+    Coveralls::SimpleCov::Formatter
+  ]
+)
+SimpleCov.start do
+  add_filter 'spec'
+  add_filter 'vendor'
+  add_filter 'db'
+end
+
 require "bundler/setup"
 require "valkyrie/sequel"
 require 'pry'
-
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"

@@ -33,4 +33,10 @@ RSpec.describe Valkyrie::Sequel::ResourceFactory do
       expect(reloaded_resource.value).to eq ["test"]
     end
   end
+
+  describe ".orm_class" do
+    it "returns resources" do
+      expect(resource_factory.orm_class).to eq adapter.resources
+    end
+  end
 end
