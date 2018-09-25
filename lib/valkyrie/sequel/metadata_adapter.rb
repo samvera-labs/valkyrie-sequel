@@ -4,13 +4,14 @@ module Valkyrie::Sequel
   require 'valkyrie/sequel/query_service'
   require 'valkyrie/sequel/persister'
   class MetadataAdapter
-    attr_reader :user, :password, :host, :port, :database
-    def initialize(user:, password:, host:, port:, database:)
+    attr_reader :user, :password, :host, :port, :database, :logger
+    def initialize(user:, password:, host:, port:, database:, logger: nil)
       @user = user
       @password = password
       @host = host
       @port = port
       @database = database
+      @logger = logger
     end
 
     def persister
@@ -54,8 +55,9 @@ module Valkyrie::Sequel
     end
 
     def connection
-      @connection ||= Sequel.connect(adapter: :postgres, user: user, password: password, host: host, port: port, database: database).tap do |connection|
+      @connection ||= Sequel.connect(adapter: :postgres, user: user, password: password, host: host, port: port, database: database, logger: logger).tap do |connection|
         connection.extension(:pg_json)
+        connection.extension(:pg_streaming)
       end
     end
 

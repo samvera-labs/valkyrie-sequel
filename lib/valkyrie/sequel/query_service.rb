@@ -17,11 +17,10 @@ module Valkyrie::Sequel
     def find_by(id:)
       id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
       validate_id(id)
+      raise Valkyrie::Persistence::ObjectNotFoundError unless ACCEPTABLE_UUID.match?(id.to_s)
       attributes = resources.first(id: id.to_s)
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
       resource_factory.to_resource(object: resources.first(id: id.to_s))
-    rescue Sequel::DatabaseError
-      raise Valkyrie::Persistence::ObjectNotFoundError
     end
 
     def find_all_of_model(model:)
@@ -91,13 +90,13 @@ module Valkyrie::Sequel
       @custom_queries ||= ::Valkyrie::Persistence::CustomQueryContainer.new(query_service: self)
     end
 
-    private
-
-      def run_query(query, *args)
-        connection[query, *args].map do |result|
-          resource_factory.to_resource(object: result)
-        end
+    def run_query(query, *args)
+      connection[query, *args].map do |result|
+        resource_factory.to_resource(object: result)
       end
+    end
+
+    private
 
       # Generate the SQL query for retrieving member resources in PostgreSQL using a
       #   resource ID as an argument.

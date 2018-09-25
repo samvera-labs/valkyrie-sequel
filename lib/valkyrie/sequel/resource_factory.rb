@@ -16,5 +16,9 @@ module Valkyrie::Sequel
     def from_resource(resource:)
       ResourceConverter.new(resource, resource_factory: self).convert!
     end
+
+    def orm_class
+      adapter.resources
+    end
   end
 end

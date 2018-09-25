@@ -26,6 +26,7 @@ module Valkyrie::Sequel
 
     def delete(resource:)
       resources.where(id: resource.id.to_s).delete
+      resource
     end
 
     def wipe!
@@ -35,9 +36,18 @@ module Valkyrie::Sequel
     private
 
       def create_or_update(resource:, attributes:)
-        attributes[:updated_at] = Sequel.function(:NOW)
-        attributes[:created_at] = Sequel.function(:NOW)
-        return resources.insert(attributes) unless resource.persisted?
+        attributes[:updated_at] = Time.now.utc
+        attributes[:created_at] = Time.now.utc
+        return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
+        update(resource: resource, attributes: attributes)
+      end
+
+      def create(resource:, attributes:)
+        attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
+        resources.insert(attributes)
+      end
+
+      def update(resource:, attributes:)
         relation = resources.where(id: attributes[:id])
         if resource.optimistic_locking_enabled?
           relation = relation.where(lock_version: attributes[:lock_version]) if attributes[:lock_version]
@@ -45,12 +55,16 @@ module Valkyrie::Sequel
         end
         attributes.delete(:lock_version) if attributes[:lock_version].nil?
         output = relation.update(attributes)
-        raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.zero?
+        raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.zero? && resource.optimistic_locking_enabled?
         attributes[:id]
       end
 
       def find(id:)
         resources.first(id: id)
+      end
+
+      def exists?(id:)
+        resources.select(1).first(id: id).nil?
       end
   end
 end

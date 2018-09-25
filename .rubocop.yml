@@ -17,3 +17,6 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Exclude:
     - 'lib/valkyrie/sequel/query_service.rb'
+Metrics/ParameterLists:
+  Exclude:
+    - 'lib/valkyrie/sequel/metadata_adapter.rb'
