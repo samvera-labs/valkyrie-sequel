@@ -20,7 +20,7 @@ module Valkyrie::Sequel
       raise Valkyrie::Persistence::ObjectNotFoundError unless ACCEPTABLE_UUID.match?(id.to_s)
       attributes = resources.first(id: id.to_s)
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
-      resource_factory.to_resource(object: resources.first(id: id.to_s))
+      resource_factory.to_resource(object: attributes)
     end
 
     def find_all_of_model(model:)

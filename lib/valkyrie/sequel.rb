@@ -10,6 +10,7 @@ module Valkyrie
     ::Sequel.extension(:pg_json)
     ::Sequel.extension(:pg_json_ops)
     ::Sequel.default_timezone = :utc
+    ::Sequel.extension(:oj_parser)
     require 'valkyrie/sequel/metadata_adapter'
   end
 end
