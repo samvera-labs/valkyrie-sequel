@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 DB_CONNECTION_INFO = {
-  user: nil,
-  password: nil,
-  host: 'localhost',
+  user: ENV['DB_USERNAME'],
+  password: ENV['DB_PASSWORD'],
+  host: ENV['DB_HOST'] || 'localhost',
   port: nil,
-  database: 'valkyrie_sequel_test'
+  database: ENV['DB_DATABASE'] || 'valkyrie_sequel_test'
 }.freeze
 
 METADATA_ADAPTER = Valkyrie::Sequel::MetadataAdapter.new(DB_CONNECTION_INFO)

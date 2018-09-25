@@ -1,0 +1,33 @@
+---
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.3.7-node-browsers
+        environment:
+          RAILS_ENV: test
+          DB_HOST: localhost
+          DB_USERNAME: valkyrie_sequel
+          DB_PASSWORD:  ""
+          DB_DATABASE: "valkyrie_sequel_test"
+      - image: postgres:10.3-alpine
+        environment:
+          POSTGRES_USER: valkyrie_sequel
+          POSTGRES_DB: valkyrie_sequel_test
+          POSTGRES_PASSWORD: ""
+    steps:
+      - checkout
+      # Restore Cached Dependencies
+      - type: cache-restore
+        name: Restore bundle cache
+        key: valkyrie-sequel-{{ checksum "Gemfile" }}
+      # Bundle install dependencies
+      - run: bundle install --path vendor/bundle
+      # Cache Dependencies
+      - type: cache-save
+        name: Store bundle cache
+        key: valkyrie-sequel-{{ checksum "Gemfile" }}
+        paths:
+          - vendor/bundle
+      - run: bundle exec rubocop
+      - run: bundle exec rspec spec
