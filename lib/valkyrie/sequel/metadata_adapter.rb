@@ -4,14 +4,12 @@ module Valkyrie::Sequel
   require 'valkyrie/sequel/query_service'
   require 'valkyrie/sequel/persister'
   class MetadataAdapter
-    attr_reader :user, :password, :host, :port, :database, :logger
-    def initialize(user:, password:, host:, port:, database:, logger: nil)
-      @user = user
-      @password = password
-      @host = host
-      @port = port
-      @database = database
-      @logger = logger
+    attr_reader :connection
+    def initialize(connection:)
+      @connection = connection.tap do |conn|
+        conn.extension(:pg_json)
+        conn.extension(:pg_streaming)
+      end
     end
 
     def persister
@@ -33,32 +31,13 @@ module Valkyrie::Sequel
       end
     end
 
-    def perform_migrations!(drop: false)
+    def perform_migrations!
       Sequel.extension :migration
-      drop_database! if drop
-      create_database!
       Sequel::Migrator.run(connection, "#{__dir__}/../../../db/migrations")
     end
 
     def reset_database!
-      perform_migrations!(drop: true)
-    end
-
-    def drop_database!
-      migration_connection.execute "DROP DATABASE IF EXISTS #{database}"
-    end
-
-    def create_database!
-      migration_connection.execute "CREATE DATABASE #{database}"
-    rescue Sequel::DatabaseError
-      nil
-    end
-
-    def connection
-      @connection ||= Sequel.connect(adapter: :postgres, user: user, password: password, host: host, port: port, database: database, logger: logger).tap do |connection|
-        connection.extension(:pg_json)
-        connection.extension(:pg_streaming)
-      end
+      perform_migrations!
     end
 
     def resources
@@ -67,8 +46,16 @@ module Valkyrie::Sequel
 
     private
 
-      def migration_connection
-        @migration_connection ||= Sequel.connect(adapter: :postgres, user: user, password: password, host: host, port: port, database: 'postgres')
+      def host
+        connection.opts[:host]
+      end
+
+      def port
+        connection.opts[:port]
+      end
+
+      def database
+        connection.opts[:database]
       end
   end
 end

@@ -11,10 +11,4 @@ RSpec.describe Valkyrie::Sequel::MetadataAdapter do
       expect(adapter.connection).not_to be_blank
     end
   end
-
-  describe ".create_database!" do
-    it "doesn't error if the database exists" do
-      expect(adapter.create_database!).to eq nil
-    end
-  end
 end
