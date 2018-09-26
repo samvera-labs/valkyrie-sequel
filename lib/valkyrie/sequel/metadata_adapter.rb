@@ -37,6 +37,8 @@ module Valkyrie::Sequel
     end
 
     def reset_database!
+      Sequel.extension :migration
+      Sequel::Migrator.run(connection, "#{__dir__}/../../../db/migrations", target: 0)
       perform_migrations!
     end
 
