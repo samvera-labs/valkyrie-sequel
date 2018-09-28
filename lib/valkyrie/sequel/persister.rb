@@ -17,16 +17,16 @@ module Valkyrie::Sequel
     # rubocop:disable Metrics/MethodLength
     def save_all(resources:)
       connection.transaction do
-        relation = self.resources.returning.insert_conflict(
-          target: :id,
-          update: update_branches,
-          update_where: {
-            Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version]
-          }
-        )
-        output = Array.wrap(relation.multi_insert(resources.map do |resource|
-          resource_factory.from_resource(resource: resource)
-        end))
+        grouped_resources = resources.group_by(&:optimistic_locking_enabled?)
+        output = grouped_resources.flat_map do |lock, values|
+          relation = save_all_relation(lock: lock)
+          output = Array.wrap(relation.multi_insert(values.map do |resource|
+            output = resource_factory.from_resource(resource: resource)
+            output[:created_at] ||= Time.now.utc
+            output[:updated_at] ||= Time.now.utc
+            output
+          end))
+        end
         raise Valkyrie::Persistence::StaleObjectError, "One or more resources have been updated by another process." if output.length != resources.length
         output.map do |object|
           resource_factory.to_resource(object: object)
@@ -34,6 +34,15 @@ module Valkyrie::Sequel
       end
     end
     # rubocop:enable Metrics/MethodLength
+
+    def save_all_relation(lock:)
+      where = { Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version] } if lock
+      resources.returning.insert_conflict(
+        target: :id,
+        update: update_branches,
+        update_where: where
+      )
+    end
 
     def delete(resource:)
       resources.where(id: resource.id.to_s).delete
@@ -52,7 +61,7 @@ module Valkyrie::Sequel
           internal_resource: Sequel[:excluded][:internal_resource],
           lock_version: Sequel[:excluded][:lock_version] + 1,
           created_at: Sequel[:excluded][:created_at],
-          updated_at: Sequel[:excluded][:updated_at]
+          updated_at: Time.now.utc
         }
       end
 

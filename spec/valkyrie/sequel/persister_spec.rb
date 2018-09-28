@@ -15,6 +15,7 @@ RSpec.describe Valkyrie::Sequel::Persister do
         enable_optimistic_locking
       end
       class NonOptimisticResource < Valkyrie::Resource
+        attribute :title
       end
     end
     after do
@@ -30,15 +31,21 @@ RSpec.describe Valkyrie::Sequel::Persister do
           output = persister.save_all(resources: [output]).first
           expect(output.send(Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK).first.token).to eq "1"
         end
+        it "can save over and over again" do
+          item = OptimisticResource.new(title: "Test")
+          item = persister.save_all(resources: [item]).first
+          item = persister.save_all(resources: [item]).first
+          persister.save_all(resources: [item]).first
+        end
       end
     end
     context "when optimistic locking is disabled" do
       context "and a lock_version is wrong" do
         it "still updates" do
-          resource = NonOptimisticResource.new
-          resource = persister.save(resource: resource)
-          persister.save(resource: resource)
-          expect { persister.save_all(resources: [resource]).first }.not_to raise_error
+          item = NonOptimisticResource.new(title: "Test")
+          item = persister.save(resource: item)
+          persister.save_all(resources: [item])
+          persister.save_all(resources: [item])
         end
       end
     end
