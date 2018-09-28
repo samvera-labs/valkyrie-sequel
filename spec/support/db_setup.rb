@@ -7,5 +7,7 @@ DB_CONNECTION_INFO = {
   database: ENV['DB_DATABASE'] || 'valkyrie_sequel_test'
 }.freeze
 
-METADATA_ADAPTER = Valkyrie::Sequel::MetadataAdapter.new(DB_CONNECTION_INFO)
+connection = Sequel.connect(DB_CONNECTION_INFO.merge(adapter: :postgres))
+
+METADATA_ADAPTER = Valkyrie::Sequel::MetadataAdapter.new(connection: connection)
 METADATA_ADAPTER.reset_database!
