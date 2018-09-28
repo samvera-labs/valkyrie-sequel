@@ -11,7 +11,7 @@ module Valkyrie::Sequel
     def save(resource:)
       object_attributes = resource_factory.from_resource(resource: resource)
       output = create_or_update(resource: resource, attributes: object_attributes)
-      resource_factory.to_resource(object: find(id: output))
+      resource_factory.to_resource(object: output)
     end
 
     def save_all(resources:)
@@ -44,7 +44,7 @@ module Valkyrie::Sequel
 
       def create(resource:, attributes:)
         attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
-        resources.insert(attributes)
+        Array(resources.returning.insert(attributes)).first
       end
 
       def update(resource:, attributes:)
@@ -54,13 +54,9 @@ module Valkyrie::Sequel
           attributes[:lock_version] = (Sequel[:lock_version] + 1)
         end
         attributes.delete(:lock_version) if attributes[:lock_version].nil?
-        output = relation.update(attributes)
-        raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.zero? && resource.optimistic_locking_enabled?
-        attributes[:id]
-      end
-
-      def find(id:)
-        resources.first(id: id)
+        output = relation.returning.update(attributes)
+        raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.blank? && resource.optimistic_locking_enabled?
+        Array(output).first
       end
 
       def exists?(id:)
