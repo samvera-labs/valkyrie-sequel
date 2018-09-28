@@ -14,15 +14,26 @@ module Valkyrie::Sequel
       resource_factory.to_resource(object: output)
     end
 
+    # rubocop:disable Metrics/MethodLength
     def save_all(resources:)
       connection.transaction do
-        resources.map do |resource|
-          save(resource: resource)
+        relation = self.resources.returning.insert_conflict(
+          target: :id,
+          update: update_branches,
+          update_where: {
+            Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version]
+          }
+        )
+        output = Array.wrap(relation.multi_insert(resources.map do |resource|
+          resource_factory.from_resource(resource: resource)
+        end))
+        raise Valkyrie::Persistence::StaleObjectError, "One or more resources have been updated by another process." if output.length != resources.length
+        output.map do |object|
+          resource_factory.to_resource(object: object)
         end
       end
-    rescue Valkyrie::Persistence::StaleObjectError
-      raise Valkyrie::Persistence::StaleObjectError, "One or more resources have been updated by another process."
     end
+    # rubocop:enable Metrics/MethodLength
 
     def delete(resource:)
       resources.where(id: resource.id.to_s).delete
@@ -34,6 +45,16 @@ module Valkyrie::Sequel
     end
 
     private
+
+      def update_branches
+        {
+          metadata: Sequel[:excluded][:metadata],
+          internal_resource: Sequel[:excluded][:internal_resource],
+          lock_version: Sequel[:excluded][:lock_version] + 1,
+          created_at: Sequel[:excluded][:created_at],
+          updated_at: Sequel[:excluded][:updated_at]
+        }
+      end
 
       def create_or_update(resource:, attributes:)
         attributes[:updated_at] = Time.now.utc
