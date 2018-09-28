@@ -9,6 +9,8 @@ module Valkyrie::Sequel
       @connection = connection.tap do |conn|
         conn.extension(:pg_json)
         conn.extension(:pg_streaming)
+        conn.extension(:connection_validator)
+        conn.pool.connection_validation_timeout = 1800
       end
     end
 
