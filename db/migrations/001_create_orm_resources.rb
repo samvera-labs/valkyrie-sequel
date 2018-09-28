@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 Sequel.migration do
   up do
-    run 'CREATE EXTENSION "uuid-ossp"'
+    run 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
     create_table :orm_resources do
       column :id, :uuid, default: Sequel.function(:uuid_generate_v4), primary_key: true
       column :metadata, :jsonb, default: '{}', index: { type: :gin }
