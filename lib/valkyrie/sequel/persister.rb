@@ -14,36 +14,100 @@ module Valkyrie::Sequel
       resource_factory.to_resource(object: output)
     end
 
-    # rubocop:disable Metrics/MethodLength
     def save_all(resources:)
       connection.transaction do
-        grouped_resources = resources.group_by(&:optimistic_locking_enabled?)
-        output = grouped_resources.flat_map do |lock, values|
-          relation = save_all_relation(lock: lock)
-          output = Array.wrap(relation.multi_insert(values.map do |resource|
-            output = resource_factory.from_resource(resource: resource)
-            output[:created_at] ||= Time.now.utc
-            output[:updated_at] ||= Time.now.utc
-            output
-          end))
-        end
+        output = SaveAllPersister::Factory.new(persister: self).for(resources: resources).persist!
         raise Valkyrie::Persistence::StaleObjectError, "One or more resources have been updated by another process." if output.length != resources.length
         output.map do |object|
           resource_factory.to_resource(object: object)
         end
       end
     end
-    # rubocop:enable Metrics/MethodLength
 
-    def save_all_relation(lock:)
-      where = { Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version] } if lock
-      resources.returning.insert_conflict(
-        target: :id,
-        update: update_branches,
-        update_where: where
-      )
+    class SaveAllPersister
+      class Factory
+        delegate :adapter, to: :persister
+        delegate :resource_factory, to: :adapter
+        delegate :resources, to: :adapter
+        attr_reader :persister
+        def initialize(persister:)
+          @persister = persister
+        end
+
+        # Resources have to be handled differently based on whether or not
+        # optimistic locking is enabled. Splitting it into two upserts allows
+        # for faster save_all while still handling optimistic locking.
+        def for(resources:)
+          grouped_resources = resources.group_by(&:optimistic_locking_enabled?)
+          locked_resources = grouped_resources[true] || []
+          unlocked_resources = grouped_resources[false] || []
+          CompositePersister.new(
+            [
+              SaveAllPersister.new(resources: locked_resources, relation: locking_relation, resource_factory: resource_factory),
+              SaveAllPersister.new(resources: unlocked_resources, relation: relation, resource_factory: resource_factory)
+            ]
+          )
+        end
+
+        def relation
+          resources.returning.insert_conflict(
+            target: :id,
+            update: update_branches
+          )
+        end
+
+        # Locking relation has an update_where condition.
+        def locking_relation
+          resources.returning.insert_conflict(
+            target: :id,
+            update: update_branches,
+            update_where: { Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version] }
+          )
+        end
+
+        def update_branches
+          {
+            metadata: Sequel[:excluded][:metadata],
+            internal_resource: Sequel[:excluded][:internal_resource],
+            lock_version: Sequel[:excluded][:lock_version] + 1,
+            created_at: Sequel[:excluded][:created_at],
+            updated_at: Time.now.utc
+          }
+        end
+      end
+      attr_reader :resources, :relation, :resource_factory
+      def initialize(resources:, relation:, resource_factory:)
+        @resources = resources
+        @relation = relation
+        @resource_factory = resource_factory
+      end
+
+      def persist!
+        return [] if resources.empty?
+        Array.wrap(
+          relation.multi_insert(converted_resources)
+        )
+      end
+
+      def converted_resources
+        @converted_resources ||= resources.map do |resource|
+          output = resource_factory.from_resource(resource: resource)
+          output[:created_at] ||= Time.now.utc
+          output[:updated_at] ||= Time.now.utc
+          output
+        end
+      end
+      class CompositePersister
+        attr_reader :persisters
+        def initialize(persisters)
+          @persisters = persisters
+        end
+
+        def persist!
+          persisters.flat_map(&:persist!)
+        end
+      end
     end
-
     def delete(resource:)
       resources.where(id: resource.id.to_s).delete
       resource
@@ -54,16 +118,6 @@ module Valkyrie::Sequel
     end
 
     private
-
-      def update_branches
-        {
-          metadata: Sequel[:excluded][:metadata],
-          internal_resource: Sequel[:excluded][:internal_resource],
-          lock_version: Sequel[:excluded][:lock_version] + 1,
-          created_at: Sequel[:excluded][:created_at],
-          updated_at: Time.now.utc
-        }
-      end
 
       def create_or_update(resource:, attributes:)
         attributes[:updated_at] = Time.now.utc
