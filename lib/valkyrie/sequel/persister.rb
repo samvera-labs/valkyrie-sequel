@@ -92,6 +92,7 @@ module Valkyrie::Sequel
       def converted_resources
         @converted_resources ||= resources.map do |resource|
           output = resource_factory.from_resource(resource: resource)
+          output[:lock_version] ||= 0
           output[:created_at] ||= Time.now.utc
           output[:updated_at] ||= Time.now.utc
           output
