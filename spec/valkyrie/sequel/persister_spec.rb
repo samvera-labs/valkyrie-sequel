@@ -8,4 +8,46 @@ RSpec.describe Valkyrie::Sequel::Persister do
   let(:adapter) { METADATA_ADAPTER }
 
   it_behaves_like "a Valkyrie::Persister"
+
+  describe "save_all with optimistic locking" do
+    before do
+      class OptimisticResource < Valkyrie::Resource
+        enable_optimistic_locking
+      end
+      class NonOptimisticResource < Valkyrie::Resource
+        attribute :title
+      end
+    end
+    after do
+      Object.send(:remove_const, :OptimisticResource)
+      Object.send(:remove_const, :NonOptimisticResource)
+    end
+    context "when optimistic locking is enabled" do
+      context "and nil is passed" do
+        it "still updates the lock_version" do
+          resource = OptimisticResource.new
+          output = persister.save(resource: resource)
+          output.send("#{Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK}=", [])
+          output = persister.save_all(resources: [output]).first
+          expect(output.send(Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK).first.token).to eq "1"
+        end
+        it "can save over and over again" do
+          item = OptimisticResource.new(title: "Test")
+          item = persister.save_all(resources: [item]).first
+          item = persister.save_all(resources: [item]).first
+          persister.save_all(resources: [item]).first
+        end
+      end
+    end
+    context "when optimistic locking is disabled" do
+      context "and a lock_version is wrong" do
+        it "still updates" do
+          item = NonOptimisticResource.new(title: "Test")
+          item = persister.save(resource: item)
+          persister.save_all(resources: [item])
+          persister.save_all(resources: [item])
+        end
+      end
+    end
+  end
 end
