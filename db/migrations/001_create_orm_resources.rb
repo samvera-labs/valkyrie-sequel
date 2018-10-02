@@ -6,7 +6,7 @@ Sequel.migration do
       column :id, :uuid, default: Sequel.function(:uuid_generate_v4), primary_key: true
       column :metadata, :jsonb, default: '{}', index: { type: :gin }
       String :internal_resource, index: true
-      Integer :lock_version, index: true, default: 0
+      Integer :lock_version, index: true
       DateTime :created_at, index: true, default: ::Sequel::CURRENT_TIMESTAMP
       DateTime :updated_at, index: true
     end
