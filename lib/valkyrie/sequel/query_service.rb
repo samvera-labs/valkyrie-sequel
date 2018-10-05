@@ -159,7 +159,7 @@ module Valkyrie::Sequel
       # @return [String]
       def find_references_query
         <<-SQL
-          SELECT member.* FROM orm_resources a,
+          SELECT DISTINCT member.* FROM orm_resources a,
           jsonb_array_elements(a.metadata->?) AS b(member)
           JOIN orm_resources member ON (b.member->>'id')::#{id_type} = member.id WHERE a.id = ?
         SQL
