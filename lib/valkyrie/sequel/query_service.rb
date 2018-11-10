@@ -9,7 +9,7 @@ module Valkyrie::Sequel
     end
 
     def find_all
-      resources.all.map do |attributes|
+      resources.stream.lazy.map do |attributes|
         resource_factory.to_resource(object: attributes)
       end
     end
