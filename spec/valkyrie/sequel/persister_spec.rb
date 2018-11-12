@@ -9,6 +9,24 @@ RSpec.describe Valkyrie::Sequel::Persister do
 
   it_behaves_like "a Valkyrie::Persister"
 
+  describe ".save" do
+    before do
+      class TinyResource < Valkyrie::Resource
+        attribute :test
+      end
+    end
+    after do
+      Object.send(:remove_const, :TinyResource)
+    end
+    it "doesn't convert strings to symbols" do
+      output = persister.save(resource: TinyResource.new(
+        test: ":4- 9 r4 ‘9 4, ‘9 ‘0 v7 ‘a 9 &lt;4 0.."
+      ))
+
+      expect(output.test.first.class).to eq String
+    end
+  end
+
   describe "save_all with optimistic locking" do
     before do
       class OptimisticResource < Valkyrie::Resource
