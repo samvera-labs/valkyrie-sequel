@@ -6,6 +6,6 @@ module Sequel
   end
 
   def self.parse_json(json)
-    Oj.load(json, create_additions: false)
+    Oj.load(json, create_additions: false, mode: :compat)
   end
 end
