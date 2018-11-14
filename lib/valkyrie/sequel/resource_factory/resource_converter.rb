@@ -44,10 +44,21 @@ module Valkyrie::Sequel
         @resource_hash ||= resource.to_h
       end
 
+      # Convert attributes to all be arrays to better enable querying and
+      # "changing of minds" later on.
+      # @return [Hash]
       def metadata_hash
+        Hash[
+          selected_resource_attributes.compact.map do |k, v|
+            [k, Array.wrap(v)]
+          end
+        ]
+      end
+
+      def selected_resource_attributes
         resource_hash.select do |k, _v|
           !primary_terms.include?(k) && !blacklist_terms.include?(k)
-        end.compact
+        end
       end
 
       def primary_terms
