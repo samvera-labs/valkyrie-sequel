@@ -13,6 +13,7 @@ RSpec.describe Valkyrie::Sequel::Persister do
     before do
       class TinyResource < Valkyrie::Resource
         attribute :test
+        attribute :single_value, Valkyrie::Types::Anything
       end
     end
     after do
@@ -24,6 +25,12 @@ RSpec.describe Valkyrie::Sequel::Persister do
       ))
 
       expect(output.test.first.class).to eq String
+    end
+    it "saves single values as an array in the database" do
+      output = persister.save(resource: TinyResource.new(single_value: "1"))
+      database_hash = query_service.resources.where(id: output.id.to_s).first
+
+      expect(database_hash[:metadata]["single_value"]).to eq ["1"]
     end
   end
 
