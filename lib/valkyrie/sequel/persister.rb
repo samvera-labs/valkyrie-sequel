@@ -122,7 +122,7 @@ module Valkyrie::Sequel
 
       def create_or_update(resource:, attributes:)
         attributes[:updated_at] = Time.now.utc
-        attributes[:created_at] = Time.now.utc
+        attributes[:created_at] ||= Time.now.utc
         return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
         update(resource: resource, attributes: attributes)
       end
