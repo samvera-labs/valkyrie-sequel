@@ -54,9 +54,11 @@ module Valkyrie::Sequel
       end
     end
 
-    def find_inverse_references_by(resource:, property:)
-      ensure_persisted(resource)
-      internal_array = { property => [id: resource.id.to_s] }
+    def find_inverse_references_by(resource: nil, id: nil, property:)
+      raise ArgumentError, "Provide resource or id" unless resource || id
+      ensure_persisted(resource) if resource
+      id ||= resource.id
+      internal_array = { property => [id: id.to_s] }
       run_query(find_inverse_references_query, internal_array.to_json)
     end
 
