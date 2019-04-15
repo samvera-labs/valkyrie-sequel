@@ -27,6 +27,7 @@ module Valkyrie::Sequel
       # Construct the optimistic lock token using the adapter and lock version for the Resource
       # @return [Valkyrie::Persistence::OptimisticLockToken]
       def lock_token
+        return nil unless object[:lock_version].present?
         @lock_token ||=
           Valkyrie::Persistence::OptimisticLockToken.new(
             adapter_id: resource_factory.adapter_id,

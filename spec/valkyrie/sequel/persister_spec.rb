@@ -34,6 +34,38 @@ RSpec.describe Valkyrie::Sequel::Persister do
     end
   end
 
+  describe "save with optimistic locking being turned on later" do
+    it "doesn't break" do
+      class OptimisticResource < Valkyrie::Resource
+      end
+      resource = OptimisticResource.new
+      object = persister.save(resource: resource)
+      class OptimisticResource < Valkyrie::Resource
+        enable_optimistic_locking
+      end
+      result = query_service.find_by(id: object.id)
+      expect { persister.save(resource: result) }.not_to raise_error
+      result = query_service.find_by(id: object.id)
+      expect(result.optimistic_lock_token[0].token).to eq "1"
+    end
+    it "doesn't break with save_all" do
+      class OptimisticResource < Valkyrie::Resource
+      end
+      resource = OptimisticResource.new
+      objects = persister.save_all(resources: [resource])
+      class OptimisticResource < Valkyrie::Resource
+        enable_optimistic_locking
+      end
+      result = query_service.find_by(id: objects.first.id)
+      expect { persister.save_all(resources: [result]) }.not_to raise_error
+      result = query_service.find_by(id: objects.first.id)
+      expect(result.optimistic_lock_token[0].token).to eq "1"
+    end
+    after do
+      Object.send(:remove_const, :OptimisticResource)
+    end
+  end
+
   describe "save_all with optimistic locking" do
     before do
       class OptimisticResource < Valkyrie::Resource

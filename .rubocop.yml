@@ -20,3 +20,6 @@ Metrics/ClassLength:
 Metrics/ParameterLists:
   Exclude:
     - 'lib/valkyrie/sequel/metadata_adapter.rb'
+RSpec/ExampleLength:
+  Exclude:
+    - 'spec/valkyrie/sequel/persister_spec.rb'

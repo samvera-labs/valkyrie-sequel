@@ -69,7 +69,7 @@ module Valkyrie::Sequel
           {
             metadata: Sequel[:excluded][:metadata],
             internal_resource: Sequel[:excluded][:internal_resource],
-            lock_version: Sequel[:excluded][:lock_version] + 1,
+            lock_version: Sequel.function(:coalesce, Sequel[:excluded][:lock_version], 0) + 1,
             created_at: Sequel[:excluded][:created_at],
             updated_at: Time.now.utc
           }
@@ -135,8 +135,8 @@ module Valkyrie::Sequel
       def update(resource:, attributes:)
         relation = resources.where(id: attributes[:id])
         if resource.optimistic_locking_enabled?
-          relation = relation.where(lock_version: attributes[:lock_version]) if attributes[:lock_version]
-          attributes[:lock_version] = (Sequel[:lock_version] + 1)
+          relation = relation.where(lock_version: attributes[:lock_version]) if attributes[:lock_version].present?
+          attributes[:lock_version] = (Sequel.function(:coalesce, :lock_version, 0) + 1)
         end
         attributes.delete(:lock_version) if attributes[:lock_version].nil?
         output = relation.returning.update(attributes)
