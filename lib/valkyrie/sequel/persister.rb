@@ -61,7 +61,7 @@ module Valkyrie::Sequel
           resources.returning.insert_conflict(
             target: :id,
             update: update_branches,
-            update_where: { Sequel[:orm_resources][:lock_version] => Sequel[:excluded][:lock_version] }
+            update_where: { Sequel.function(:coalesce, Sequel[:orm_resources][:lock_version], 0) => Sequel[:excluded][:lock_version] }
           )
         end
 
@@ -69,7 +69,7 @@ module Valkyrie::Sequel
           {
             metadata: Sequel[:excluded][:metadata],
             internal_resource: Sequel[:excluded][:internal_resource],
-            lock_version: Sequel[:excluded][:lock_version] + 1,
+            lock_version: Sequel.function(:coalesce, Sequel[:excluded][:lock_version], 0) + 1,
             created_at: Sequel[:excluded][:created_at],
             updated_at: Time.now.utc
           }
@@ -109,6 +109,7 @@ module Valkyrie::Sequel
         end
       end
     end
+
     def delete(resource:)
       resources.where(id: resource.id.to_s).delete
       resource
@@ -135,8 +136,8 @@ module Valkyrie::Sequel
       def update(resource:, attributes:)
         relation = resources.where(id: attributes[:id])
         if resource.optimistic_locking_enabled?
-          relation = relation.where(lock_version: attributes[:lock_version]) if attributes[:lock_version]
-          attributes[:lock_version] = (Sequel[:lock_version] + 1)
+          relation = relation.where(Sequel.function(:coalesce, :lock_version, 0) => attributes[:lock_version] || 0)
+          attributes[:lock_version] = (Sequel.function(:coalesce, :lock_version, 0) + 1)
         end
         attributes.delete(:lock_version) if attributes[:lock_version].nil?
         output = relation.returning.update(attributes)

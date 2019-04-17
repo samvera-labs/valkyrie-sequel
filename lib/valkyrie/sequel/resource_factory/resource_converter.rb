@@ -25,7 +25,7 @@ module Valkyrie::Sequel
       # @param [ORM::Resource] orm_object
       def process_lock_token(orm_object)
         return unless resource.respond_to?(Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK)
-        postgres_token = resource[Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK].find do |token|
+        postgres_token = (resource[Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK] || []).find do |token|
           token.adapter_id == resource_factory.adapter_id
         end
         return unless postgres_token
