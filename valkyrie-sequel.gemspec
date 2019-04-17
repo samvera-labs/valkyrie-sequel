@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "sequel"
   spec.add_dependency "sequel_pg"
-  spec.add_dependency "valkyrie", "~> 1.5.0.RC1"
+  spec.add_dependency "valkyrie", '>= 1.5.0', '< 3.0.0'
   spec.add_dependency "oj"
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"
