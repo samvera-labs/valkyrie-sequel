@@ -50,9 +50,19 @@ module Valkyrie::Sequel
       def metadata_hash
         Hash[
           selected_resource_attributes.compact.map do |k, v|
-            [k, Array.wrap(v)]
+            [k, Array.wrap(convert(v))]
           end
         ]
+      end
+
+      def convert(v)
+        Array.wrap(v).map do |val|
+          if val.is_a?(Hash) && !val[:internal_resource]
+            val.merge!(hash_marker: true)
+          else
+            val
+          end
+        end
       end
 
       def selected_resource_attributes
