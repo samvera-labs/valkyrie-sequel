@@ -24,7 +24,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "sequel_pg"
   spec.add_dependency "valkyrie", '>= 2.0.0.RC5', '< 3.0.0'
   spec.add_dependency "oj"
-  spec.add_dependency "activerecord"
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
