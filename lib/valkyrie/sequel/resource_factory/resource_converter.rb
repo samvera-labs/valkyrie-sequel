@@ -1,6 +1,17 @@
 # frozen_string_literal: true
 module Valkyrie::Sequel
   class ResourceFactory::ResourceConverter
+    PRIMARY_TERMS = [
+      :id,
+      :created_at,
+      :updated_at,
+      :internal_resource
+    ].freeze
+
+    BLACKLIST_TERMS = [
+      :new_record
+    ].freeze
+
     attr_reader :resource, :resource_factory
     delegate :orm_class, :adapter, to: :resource_factory
     delegate :resources, to: :adapter
@@ -34,14 +45,14 @@ module Valkyrie::Sequel
 
       def database_hash
         resource_hash.select do |k, _v|
-          primary_terms.include?(k)
+          PRIMARY_TERMS.include?(k)
         end.compact.merge(
           metadata: ::Sequel.pg_json(metadata_hash)
         )
       end
 
       def resource_hash
-        @resource_hash ||= resource.to_h
+        @resource_hash ||= resource.__attributes__
       end
 
       # Convert attributes to all be arrays to better enable querying and
@@ -57,23 +68,8 @@ module Valkyrie::Sequel
 
       def selected_resource_attributes
         resource_hash.select do |k, _v|
-          !primary_terms.include?(k) && !blacklist_terms.include?(k)
+          !PRIMARY_TERMS.include?(k) && !BLACKLIST_TERMS.include?(k)
         end
-      end
-
-      def primary_terms
-        [
-          :id,
-          :created_at,
-          :updated_at,
-          :internal_resource
-        ]
-      end
-
-      def blacklist_terms
-        [
-          :new_record
-        ]
       end
   end
 end
