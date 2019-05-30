@@ -54,7 +54,7 @@ module Valkyrie::Sequel
       # Generate a Hash derived from Valkyrie Resource metadata encoded in the RDF
       # @return [Hash]
       def rdf_metadata
-        @rdf_metadata ||= Valkyrie::Persistence::Postgres::ORMConverter::RDFMetadata.new(object[:metadata]).result
+        @rdf_metadata ||= Valkyrie::Persistence::Shared::JSONValueMapper.new(object[:metadata]).result
       end
   end
 end
