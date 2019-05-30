@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 module Valkyrie
   module Sequel
-    VERSION = "1.1.0"
+    VERSION = "2.0.0.RC1"
   end
 end
