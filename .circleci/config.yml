@@ -21,6 +21,7 @@ jobs:
       - type: cache-restore
         name: Restore bundle cache
         key: valkyrie-sequel-{{ checksum "Gemfile" }}
+      - run: gem install bundler -v '~> 2.0'
       # Bundle install dependencies
       - run: bundle install --path vendor/bundle
       # Cache Dependencies
