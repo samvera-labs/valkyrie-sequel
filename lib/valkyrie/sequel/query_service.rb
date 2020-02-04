@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Valkyrie::Sequel
   class QueryService
-    ACCEPTABLE_UUID = %r{\A(\{)?([a-fA-F0-9]{4}-?){8}(?(1)\}|)\z}
+    ACCEPTABLE_UUID = %r{\A(\{)?([a-fA-F0-9]{4}-?){8}(?(1)\}|)\z}.freeze
     attr_reader :adapter
     delegate :resources, :resource_factory, :connection, to: :adapter
     def initialize(adapter:)
