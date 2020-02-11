@@ -29,6 +29,13 @@ module Valkyrie::Sequel
       end
     end
 
+    # Count all records for a specific resource type
+    # @param [Class] model
+    # @return integer
+    def count_all_of_model(model:)
+      resources.where(internal_resource: model.to_s).count
+    end
+
     def find_many_by_ids(ids:)
       ids = ids.map do |id|
         id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
@@ -44,22 +51,26 @@ module Valkyrie::Sequel
       end
     end
 
-    def find_references_by(resource:, property:)
+    def find_references_by(resource:, property:, model: nil)
       return [] if resource.id.blank? || resource[property].blank?
       # only return ordered if needed to avoid performance penalties
       if ordered_property?(resource: resource, property: property)
-        run_query(find_ordered_references_query, property.to_s, resource.id.to_s)
+        find_ordered_references_by(resource: resource, property: property, model: model)
       else
-        run_query(find_references_query, property.to_s, resource.id.to_s)
+        find_unordered_references_by(resource: resource, property: property, model: model)
       end
     end
 
-    def find_inverse_references_by(resource: nil, id: nil, property:)
+    def find_inverse_references_by(resource: nil, id: nil, model: nil, property:)
       raise ArgumentError, "Provide resource or id" unless resource || id
       ensure_persisted(resource) if resource
       id ||= resource.id
       internal_array = { property => [id: id.to_s] }
-      run_query(find_inverse_references_query, internal_array.to_json)
+      if model
+        run_query(find_inverse_references_with_model_query, internal_array.to_json, model.to_s)
+      else
+        run_query(find_inverse_references_query, internal_array.to_json)
+      end
     end
 
     # Find and a record using a Valkyrie ID for an alternate ID, and construct
@@ -150,6 +161,14 @@ module Valkyrie::Sequel
         SQL
       end
 
+      def find_inverse_references_with_model_query
+        <<-SQL
+          SELECT * FROM orm_resources WHERE
+          metadata @> ?
+          AND internal_resource = ?
+        SQL
+      end
+
       # Generate the SQL query for retrieving member resources in PostgreSQL using a
       #   JSON object literal and resource ID as arguments.
       # @see https://guides.rubyonrails.org/active_record_querying.html#array-conditions
@@ -167,11 +186,30 @@ module Valkyrie::Sequel
         SQL
       end
 
+      def find_references_with_type_query
+        <<-SQL
+          SELECT DISTINCT member.* FROM orm_resources a,
+          jsonb_array_elements(a.metadata->?) AS b(member)
+          JOIN orm_resources member ON (b.member->>'id')::#{id_type} = member.id WHERE a.id = ?
+          AND member.internal_resource = ?
+        SQL
+      end
+
       def find_ordered_references_query
         <<-SQL
           SELECT member.* FROM orm_resources a,
           jsonb_array_elements(a.metadata->?) WITH ORDINALITY AS b(member, member_pos)
           JOIN orm_resources member ON (b.member->>'id')::#{id_type} = member.id WHERE a.id = ?
+          ORDER BY b.member_pos
+        SQL
+      end
+
+      def find_ordered_references_with_type_query
+        <<-SQL
+          SELECT member.* FROM orm_resources a,
+          jsonb_array_elements(a.metadata->?) WITH ORDINALITY AS b(member, member_pos)
+          JOIN orm_resources member ON (b.member->>'id')::#{id_type} = member.id WHERE a.id = ?
+          AND member.internal_resource = ?
           ORDER BY b.member_pos
         SQL
       end
@@ -200,6 +238,22 @@ module Valkyrie::Sequel
 
       def ordered_property?(resource:, property:)
         resource.ordered_attribute?(property)
+      end
+
+      def find_ordered_references_by(resource:, property:, model: nil)
+        if model
+          run_query(find_ordered_references_with_type_query, property.to_s, resource.id.to_s, model.to_s)
+        else
+          run_query(find_ordered_references_query, property.to_s, resource.id.to_s)
+        end
+      end
+
+      def find_unordered_references_by(resource:, property:, model: nil)
+        if model
+          run_query(find_references_with_type_query, property.to_s, resource.id.to_s, model.to_s)
+        else
+          run_query(find_references_query, property.to_s, resource.id.to_s)
+        end
       end
   end
 end
