@@ -8,7 +8,7 @@ module Valkyrie::Sequel
       :internal_resource
     ].freeze
 
-    BLACKLIST_TERMS = [
+    DISALLOWED_TERMS = [
       :new_record
     ].freeze
 
@@ -68,7 +68,7 @@ module Valkyrie::Sequel
 
     def selected_resource_attributes
       resource_hash.select do |k, _v|
-        !PRIMARY_TERMS.include?(k) && !BLACKLIST_TERMS.include?(k)
+        !PRIMARY_TERMS.include?(k) && !DISALLOWED_TERMS.include?(k)
       end
     end
   end
