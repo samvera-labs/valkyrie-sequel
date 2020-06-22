@@ -48,16 +48,16 @@ module Valkyrie::Sequel
 
     private
 
-      def host
-        connection.opts[:host]
-      end
+    def host
+      connection.opts[:host]
+    end
 
-      def port
-        connection.opts[:port]
-      end
+    def port
+      connection.opts[:port]
+    end
 
-      def database
-        connection.opts[:database]
-      end
+    def database
+      connection.opts[:database]
+    end
   end
 end

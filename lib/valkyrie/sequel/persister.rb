@@ -121,32 +121,32 @@ module Valkyrie::Sequel
 
     private
 
-      def create_or_update(resource:, attributes:)
-        attributes[:updated_at] = Time.now.utc
-        attributes[:created_at] ||= Time.now.utc
-        return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
-        update(resource: resource, attributes: attributes)
-      end
+    def create_or_update(resource:, attributes:)
+      attributes[:updated_at] = Time.now.utc
+      attributes[:created_at] ||= Time.now.utc
+      return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
+      update(resource: resource, attributes: attributes)
+    end
 
-      def create(resource:, attributes:)
-        attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
-        Array(resources.returning.insert(attributes)).first
-      end
+    def create(resource:, attributes:)
+      attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
+      Array(resources.returning.insert(attributes)).first
+    end
 
-      def update(resource:, attributes:)
-        relation = resources.where(id: attributes[:id])
-        if resource.optimistic_locking_enabled?
-          relation = relation.where(Sequel.function(:coalesce, :lock_version, 0) => attributes[:lock_version] || 0)
-          attributes[:lock_version] = (Sequel.function(:coalesce, :lock_version, 0) + 1)
-        end
-        attributes.delete(:lock_version) if attributes[:lock_version].nil?
-        output = relation.returning.update(attributes)
-        raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.blank? && resource.optimistic_locking_enabled?
-        Array(output).first
+    def update(resource:, attributes:)
+      relation = resources.where(id: attributes[:id])
+      if resource.optimistic_locking_enabled?
+        relation = relation.where(Sequel.function(:coalesce, :lock_version, 0) => attributes[:lock_version] || 0)
+        attributes[:lock_version] = (Sequel.function(:coalesce, :lock_version, 0) + 1)
       end
+      attributes.delete(:lock_version) if attributes[:lock_version].nil?
+      output = relation.returning.update(attributes)
+      raise Valkyrie::Persistence::StaleObjectError, "The object #{resource.id} has been updated by another process." if output.blank? && resource.optimistic_locking_enabled?
+      Array(output).first
+    end
 
-      def exists?(id:)
-        resources.select(1).first(id: id).nil?
-      end
+    def exists?(id:)
+      resources.select(1).first(id: id).nil?
+    end
   end
 end
