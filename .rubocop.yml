@@ -2,7 +2,6 @@ inherit_gem:
   bixby: bixby_default.yml
 AllCops:
   DisplayCopNames: true
-  TargetRubyVersion: 2.3
   Exclude:
     - 'bin/*'
     - 'db/schema.rb'
@@ -24,3 +23,5 @@ Metrics/ParameterLists:
 RSpec/ExampleLength:
   Exclude:
     - 'spec/valkyrie/sequel/persister_spec.rb'
+Rails/RakeEnvironment:
+  Enabled: false

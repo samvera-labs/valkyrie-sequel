@@ -13,48 +13,48 @@ module Valkyrie::Sequel
 
     private
 
-      # Construct a new Valkyrie Resource using the attributes retrieved from the database
-      # @return [Valkyrie::Resource]
-      def resource
-        resource_klass.new(
-          attributes.merge(
-            new_record: false,
-            Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK => lock_token
-          )
+    # Construct a new Valkyrie Resource using the attributes retrieved from the database
+    # @return [Valkyrie::Resource]
+    def resource
+      resource_klass.new(
+        attributes.merge(
+          new_record: false,
+          Valkyrie::Persistence::Attributes::OPTIMISTIC_LOCK => lock_token
         )
-      end
+      )
+    end
 
-      # Construct the optimistic lock token using the adapter and lock version for the Resource
-      # @return [Valkyrie::Persistence::OptimisticLockToken]
-      def lock_token
-        return nil unless object[:lock_version].present?
-        @lock_token ||=
-          Valkyrie::Persistence::OptimisticLockToken.new(
-            adapter_id: resource_factory.adapter_id,
-            token: object[:lock_version]
-          )
-      end
+    # Construct the optimistic lock token using the adapter and lock version for the Resource
+    # @return [Valkyrie::Persistence::OptimisticLockToken]
+    def lock_token
+      return nil if object[:lock_version].blank?
+      @lock_token ||=
+        Valkyrie::Persistence::OptimisticLockToken.new(
+          adapter_id: resource_factory.adapter_id,
+          token: object[:lock_version]
+        )
+    end
 
-      # Retrieve the Class used to construct the Valkyrie Resource
-      # @return [Class]
-      def resource_klass
-        internal_resource.constantize
-      end
+    # Retrieve the Class used to construct the Valkyrie Resource
+    # @return [Class]
+    def resource_klass
+      internal_resource.constantize
+    end
 
-      # Access the String for the Valkyrie Resource type within the attributes
-      # @return [String]
-      def internal_resource
-        attributes[:internal_resource]
-      end
+    # Access the String for the Valkyrie Resource type within the attributes
+    # @return [String]
+    def internal_resource
+      attributes[:internal_resource]
+    end
 
-      def attributes
-        @attributes ||= object.except(:metadata).merge(rdf_metadata).symbolize_keys
-      end
+    def attributes
+      @attributes ||= object.except(:metadata).merge(rdf_metadata).symbolize_keys
+    end
 
-      # Generate a Hash derived from Valkyrie Resource metadata encoded in the RDF
-      # @return [Hash]
-      def rdf_metadata
-        @rdf_metadata ||= Valkyrie::Persistence::Shared::JSONValueMapper.new(object[:metadata]).result
-      end
+    # Generate a Hash derived from Valkyrie Resource metadata encoded in the RDF
+    # @return [Hash]
+    def rdf_metadata
+      @rdf_metadata ||= Valkyrie::Persistence::Shared::JSONValueMapper.new(object[:metadata]).result
+    end
   end
 end
