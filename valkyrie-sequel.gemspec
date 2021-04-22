@@ -20,10 +20,10 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "sequel"
-  spec.add_dependency "sequel_pg"
+  spec.add_dependency "sequel", "~> 5.0"
+  spec.add_dependency "sequel_pg", "~> 1.0"
   spec.add_dependency "valkyrie", '~> 2.1.0'
-  spec.add_dependency "oj"
+  spec.add_dependency "oj", "~> 3.0"
   spec.add_development_dependency "bundler", "~> 2.0"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec", "~> 3.0"
