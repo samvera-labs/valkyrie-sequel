@@ -17,10 +17,16 @@ module Valkyrie::Sequel
     def find_by(id:)
       id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
       validate_id(id)
-      raise Valkyrie::Persistence::ObjectNotFoundError unless ACCEPTABLE_UUID.match?(id.to_s)
       attributes = resources.first(id: id.to_s)
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
       resource_factory.to_resource(object: attributes)
+    rescue Sequel::DatabaseError => err
+      case err.cause
+      when PG::InvalidTextRepresentation
+        raise Valkyrie::Persistence::ObjectNotFoundError
+      else
+        raise err
+      end
     end
 
     def find_all_of_model(model:)
@@ -41,9 +47,6 @@ module Valkyrie::Sequel
         id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
         validate_id(id)
         id.to_s
-      end
-      ids = ids.select do |id|
-        ACCEPTABLE_UUID.match?(id)
       end
 
       resources.where(id: ids).map do |attributes|
