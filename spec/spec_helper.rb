@@ -2,13 +2,7 @@
 ENV['RACK_ENV'] = 'test'
 ENV['RAILS_ENV'] = 'test'
 require 'simplecov'
-require 'coveralls'
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new(
-  [
-    SimpleCov::Formatter::HTMLFormatter,
-    Coveralls::SimpleCov::Formatter
-  ]
-)
+SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 SimpleCov.start do
   add_filter 'spec'
   add_filter 'vendor'
