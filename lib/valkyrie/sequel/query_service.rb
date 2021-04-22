@@ -49,7 +49,7 @@ module Valkyrie::Sequel
         id.to_s
       end
 
-      resources.where(id: ids).map do |attributes|
+      resources.where(Sequel.lit('(id::varchar) IN ?', ids)).map do |attributes|
         resource_factory.to_resource(object: attributes)
       end
     end
