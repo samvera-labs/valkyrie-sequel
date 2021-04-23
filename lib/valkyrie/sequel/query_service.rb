@@ -2,6 +2,8 @@
 module Valkyrie::Sequel
   class QueryService
     ACCEPTABLE_UUID = %r{\A(\{)?([a-fA-F0-9]{4}-?){8}(?(1)\}|)\z}.freeze
+    DEFAULT_ID_TYPE = :uuid
+
     attr_reader :adapter
     delegate :resources, :resource_factory, :connection, to: :adapter
     def initialize(adapter:)
@@ -222,7 +224,7 @@ module Valkyrie::Sequel
     # @see https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaCache.html#method-i-columns_hash
     # @return [Symbol]
     def id_type
-      @id_type ||= :uuid
+      @id_type ||= DEFAULT_ID_TYPE
     end
 
     # Determines whether or not an Object is a Valkyrie ID
