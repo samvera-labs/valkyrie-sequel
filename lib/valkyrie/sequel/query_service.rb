@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 module Valkyrie::Sequel
   class QueryService
+    # ACCEPTABLE_UUID is deprecated and unused.
+    # which IDs are acceptable is now decided by the database.
     ACCEPTABLE_UUID = %r{\A(\{)?([a-fA-F0-9]{4}-?){8}(?(1)\}|)\z}.freeze
     DEFAULT_ID_TYPE = :uuid
 

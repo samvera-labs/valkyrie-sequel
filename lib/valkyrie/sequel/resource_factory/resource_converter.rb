@@ -23,7 +23,6 @@ module Valkyrie::Sequel
     def convert!
       output = database_hash
       output[:id] = resource.id.to_s if resource.id
-      output.delete(:id) unless !output[:id] || QueryService::ACCEPTABLE_UUID.match?(output[:id].to_s)
       process_lock_token(output)
       output
     end
