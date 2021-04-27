@@ -21,16 +21,11 @@ module Valkyrie::Sequel
     def find_by(id:)
       id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
       validate_id(id)
-      attributes = resources.first(id: id.to_s)
+      attributes = resources.first(Sequel.lit('(id::varchar) = ?', id.to_s))
+
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
+
       resource_factory.to_resource(object: attributes)
-    rescue Sequel::DatabaseError => err
-      case err.cause
-      when PG::InvalidTextRepresentation
-        raise Valkyrie::Persistence::ObjectNotFoundError
-      else
-        raise err
-      end
     end
 
     def find_all_of_model(model:)
