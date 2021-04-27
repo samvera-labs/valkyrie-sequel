@@ -18,10 +18,16 @@ module Valkyrie::Sequel
       end
     end
 
+    # rubocop:disable Metrics/MethodLength
     def find_by(id:)
       id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
       validate_id(id)
-      attributes = resources.first(id: id.to_s)
+      attributes = nil
+      # Create a nested transaction so it can rollback to a non-essential
+      # savepoint if the query fails, not wrecking upstream transactions.
+      connection.transaction(savepoint: true) do
+        attributes = resources.first(id: id.to_s)
+      end
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
       resource_factory.to_resource(object: attributes)
     rescue Sequel::DatabaseError => err
@@ -32,6 +38,7 @@ module Valkyrie::Sequel
         raise err
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     def find_all_of_model(model:)
       resources.where(internal_resource: model.to_s).map do |attributes|
