@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 module Valkyrie::Sequel
   class QueryService
+    # ACCEPTABLE_UUID is deprecated and unused.
+    # which IDs are acceptable is now decided by the database.
     ACCEPTABLE_UUID = %r{\A(\{)?([a-fA-F0-9]{4}-?){8}(?(1)\}|)\z}.freeze
+    DEFAULT_ID_TYPE = :uuid
+
     attr_reader :adapter
     delegate :resources, :resource_factory, :connection, to: :adapter
     def initialize(adapter:)
@@ -17,10 +21,16 @@ module Valkyrie::Sequel
     def find_by(id:)
       id = Valkyrie::ID.new(id.to_s) if id.is_a?(String)
       validate_id(id)
-      raise Valkyrie::Persistence::ObjectNotFoundError unless ACCEPTABLE_UUID.match?(id.to_s)
       attributes = resources.first(id: id.to_s)
       raise Valkyrie::Persistence::ObjectNotFoundError unless attributes
       resource_factory.to_resource(object: attributes)
+    rescue Sequel::DatabaseError => err
+      case err.cause
+      when PG::InvalidTextRepresentation
+        raise Valkyrie::Persistence::ObjectNotFoundError
+      else
+        raise err
+      end
     end
 
     def find_all_of_model(model:)
@@ -42,11 +52,8 @@ module Valkyrie::Sequel
         validate_id(id)
         id.to_s
       end
-      ids = ids.select do |id|
-        ACCEPTABLE_UUID.match?(id)
-      end
 
-      resources.where(id: ids).map do |attributes|
+      resources.where(Sequel.lit('(id::varchar) IN ?', ids)).map do |attributes|
         resource_factory.to_resource(object: attributes)
       end
     end
@@ -219,7 +226,7 @@ module Valkyrie::Sequel
     # @see https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaCache.html#method-i-columns_hash
     # @return [Symbol]
     def id_type
-      @id_type ||= :uuid
+      @id_type ||= DEFAULT_ID_TYPE
     end
 
     # Determines whether or not an Object is a Valkyrie ID
