@@ -124,8 +124,12 @@ module Valkyrie::Sequel
     def create_or_update(resource:, attributes:)
       attributes[:updated_at] = Time.now.utc
       attributes[:created_at] ||= Time.now.utc
-      return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
-      update(resource: resource, attributes: attributes)
+      if resource.persisted?
+        raise Valkyrie::Persistence::ObjectNotFoundError, "The object #{resource.id} is previously persisted but not found at save time." unless exists?(id: attributes[:id])
+        update(resource: resource, attributes: attributes)
+      else
+        create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
+      end
     end
 
     def create(resource:, attributes:)
@@ -146,7 +150,7 @@ module Valkyrie::Sequel
     end
 
     def exists?(id:)
-      resources.select(1).first(id: id).nil?
+      !resources.select(1).first(id: id).nil?
     end
   end
 end
