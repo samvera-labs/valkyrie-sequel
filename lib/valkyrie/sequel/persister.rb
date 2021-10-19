@@ -8,9 +8,9 @@ module Valkyrie::Sequel
       @adapter = adapter
     end
 
-    def save(resource:)
+    def save(resource:, external_resource: false)
       object_attributes = resource_factory.from_resource(resource: resource)
-      output = create_or_update(resource: resource, attributes: object_attributes)
+      output = create_or_update(resource: resource, attributes: object_attributes, external_resource: external_resource)
       resource_factory.to_resource(object: output)
     end
 
@@ -121,11 +121,18 @@ module Valkyrie::Sequel
 
     private
 
-    def create_or_update(resource:, attributes:)
+    def create_or_update(resource:, attributes:, external_resource:)
       attributes[:updated_at] = Time.now.utc
       attributes[:created_at] ||= Time.now.utc
-      return create(resource: resource, attributes: attributes) unless resource.persisted? && !exists?(id: attributes[:id])
-      update(resource: resource, attributes: attributes)
+      if exists?(id: attributes[:id])
+        update(resource: resource, attributes: attributes)
+      else
+        if !external_resource && resource.persisted?
+          # This resource has been deleted in the meantime, error.
+          raise Valkyrie::Persistence::ObjectNotFoundError, "The object #{resource.id} is previously persisted but not found at save time." unless exists?(id: attributes[:id])
+        end
+        create(resource: resource, attributes: attributes)
+      end
     end
 
     def create(resource:, attributes:)
@@ -146,7 +153,7 @@ module Valkyrie::Sequel
     end
 
     def exists?(id:)
-      resources.select(1).first(id: id).nil?
+      !resources.select(1).first(id: id).nil?
     end
   end
 end
