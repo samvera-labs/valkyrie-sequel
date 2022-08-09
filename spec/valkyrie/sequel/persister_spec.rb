@@ -95,6 +95,7 @@ RSpec.describe Valkyrie::Sequel::Persister do
       class OptimisticResource < Valkyrie::Resource
         enable_optimistic_locking
       end
+
       class NonOptimisticResource < Valkyrie::Resource
         attribute :title
       end
