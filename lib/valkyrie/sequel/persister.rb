@@ -98,6 +98,7 @@ module Valkyrie::Sequel
           output
         end
       end
+
       class CompositePersister
         attr_reader :persisters
         def initialize(persisters)
@@ -137,7 +138,7 @@ module Valkyrie::Sequel
 
     def create(resource:, attributes:)
       attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
-      Array(resources.returning.insert(attributes)).first
+      Array(resources.returning.insert(attributes)).first # rubocop:disable Rails/SkipsModelValidations
     end
 
     def update(resource:, attributes:)
