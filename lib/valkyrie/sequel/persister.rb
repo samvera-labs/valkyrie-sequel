@@ -41,6 +41,7 @@ module Valkyrie::Sequel
           grouped_resources = resources.group_by(&:optimistic_locking_enabled?)
           locked_resources = grouped_resources[true] || []
           unlocked_resources = grouped_resources[false] || []
+
           CompositePersister.new(
             [
               SaveAllPersister.new(resources: locked_resources, relation: locking_relation, resource_factory: resource_factory),
