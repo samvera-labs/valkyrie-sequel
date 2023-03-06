@@ -41,6 +41,7 @@ module Valkyrie::Sequel
           grouped_resources = resources.group_by(&:optimistic_locking_enabled?)
           locked_resources = grouped_resources[true] || []
           unlocked_resources = grouped_resources[false] || []
+
           CompositePersister.new(
             [
               SaveAllPersister.new(resources: locked_resources, relation: locking_relation, resource_factory: resource_factory),
@@ -98,6 +99,7 @@ module Valkyrie::Sequel
           output
         end
       end
+
       class CompositePersister
         attr_reader :persisters
         def initialize(persisters)
@@ -137,7 +139,7 @@ module Valkyrie::Sequel
 
     def create(resource:, attributes:)
       attributes[:lock_version] = 0 if resource.optimistic_locking_enabled? && resources.columns.include?(:lock_version)
-      Array(resources.returning.insert(attributes)).first
+      Array(resources.returning.insert(attributes)).first # rubocop:disable Rails/SkipsModelValidations
     end
 
     def update(resource:, attributes:)
