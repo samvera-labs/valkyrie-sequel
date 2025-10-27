@@ -41,8 +41,12 @@ module Valkyrie::Sequel
     # rubocop:enable Metrics/MethodLength
 
     def find_all_of_model(model:)
-      resources.where(internal_resource: model.to_s).map do |attributes|
-        resource_factory.to_resource(object: attributes)
+      connection.transaction(savepoint: true) do
+        relation = resources.use_cursor
+        relation = relation.where(internal_resource: model.to_s)
+        relation.lazy.map do |attributes|
+          resource_factory.to_resource(object: attributes)
+        end
       end
     end
 
