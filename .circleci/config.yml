@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/ruby:2.7.2-node-browsers
+      - image: cimg/ruby:3.3.0-browsers
         environment:
           RAILS_ENV: test
           BUNDLE_PATH: vendor/bundle
@@ -11,11 +11,12 @@ jobs:
           DB_USERNAME: valkyrie_sequel
           DB_PASSWORD:  ""
           DB_DATABASE: "valkyrie_sequel_test"
-      - image: postgres:10.3-alpine
+      - image: cimg/postgres:18.0
         environment:
           POSTGRES_USER: valkyrie_sequel
           POSTGRES_DB: valkyrie_sequel_test
           POSTGRES_PASSWORD: ""
+          POSTGRES_HOST_AUTH_METHOD: trust
     steps:
       - checkout
       # Restore Cached Dependencies
