@@ -26,3 +26,14 @@ Or install it yourself as:
    necessary on a local development setup, though.
 3. `rake db:create`
 4. `rspec spec`
+
+### With Lando
+
+If you're using lando, do the following:
+
+1. `lando start`
+1. `export DB_HOST=localhost`
+1. `export DB_USERNAME=postgres`
+1. `export DB_PORT=5448`
+1. `rake db:create`
+1. `rspec spec`
