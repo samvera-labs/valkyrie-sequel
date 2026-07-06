@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cimg/ruby:3.3.0-browsers
+      - image: cimg/ruby:3.3.11-browsers
         environment:
           RAILS_ENV: test
           BUNDLE_PATH: vendor/bundle
@@ -23,7 +23,7 @@ jobs:
       - type: cache-restore
         name: Restore bundle cache
         key: valkyrie-sequel-{{ checksum "Gemfile" }}
-      - run: gem install bundler -v '~> 2.0'
+      - run: gem install bundler
       # Bundle install dependencies
       - run: bundle install
       # Cache Dependencies

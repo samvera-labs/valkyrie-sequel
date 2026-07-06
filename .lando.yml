@@ -1,0 +1,7 @@
+name: valkyrie-sequel
+app_mount: false
+services:
+  valkyrie_sequel_database:
+    app_mount: false
+    type: postgres:15
+    portforward: 5448
